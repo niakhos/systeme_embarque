@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html lang="fr">
+  <head>
+    <script>
+      //Fonction qui s'execute au chargement de la page
+      window.onload = function (){
+        var dps = []; // points de la courbe
+        var chart = new CanvasJS.Chart("chartContainer", {
+          title :{
+            text: "Capteur intensité lumière"
+          },
+          axisY: {
+            includeZero: false
+          },      
+          data: [{
+            type: "line",
+            dataPoints: dps
+          }]
+        });
+
+        var xVal = 0;
+        var yVal = 100; 
+        var updateInterval = 1000;//Intervalle d'actualisation de la courbe
+        var dataLength = 10;
+
+        //clé qui nous est envoyée par blynk
+        var key = "CLE_BLYNK";
+        var pinCapteurPhotoResistance = "D14"; //Correspond à A0 sur l'API de blynk
+
+        //Fonction qui met à jours la courbe 
+        var updateChart = function (count) {  
+          var request = new XMLHttpRequest();
+          request.open('GET', 'http://blynk-cloud.com/'+key+'/get/D14'); 
+          request.onreadystatechange = function () {
+            if (this.readyState === 4){
+              count = count || 1;
+              var res = this.responseText;
+              res = parseInt(res.substring(2,res.length-2));
+              for (var j = 0; j < count; j++) {
+                yVal = res;
+                dps.push({
+                  x: xVal,
+                  y: yVal
+                });
+                xVal++;
+              }
+              if (dps.length > dataLength) {
+                dps.shift();
+              }
+            }
+          };
+          request.send();
+          chart.render();
+        };
+        updateChart(dataLength);
+        setInterval(function(){updateChart()}, updateInterval);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+    <div id="vals"></div>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+  </body>
+</html>
